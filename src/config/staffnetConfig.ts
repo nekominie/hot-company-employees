@@ -43,6 +43,9 @@ export interface StaffNetConfig {
     showLabel: string
     hideLabel: string
     submitLabel: string
+    submittingLabel: string
+    errorFallback: string
+    highlights: string[]
     adminNote: string
     legalNote: string
   }
@@ -189,6 +192,13 @@ export const staffnetConfig: StaffNetConfig = {
     showLabel: 'Mostrar contraseña',
     hideLabel: 'Ocultar contraseña',
     submitLabel: 'Iniciar sesión',
+    submittingLabel: 'Verificando credenciales...',
+    errorFallback: 'No se pudo iniciar sesión. Intenta de nuevo.',
+    highlights: [
+      'Recursos Humanos, nómina y asistencia',
+      'Gestor documental y protocolos internos',
+      'Mensajería y mesa de ayuda de TI',
+    ],
     adminNote:
       'Las cuentas de StaffNet son administradas por Recursos Humanos y el Dpto. de Credenciales. Para obtener acceso, contacta a tu coordinador de área.',
     legalNote: '© FISINOR S.A. de C.V. — Acceso monitoreado. Uso exclusivo del personal homologado.',

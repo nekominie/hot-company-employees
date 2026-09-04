@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { staffnetConfig } from '../../config/staffnetConfig'
+import { loginEmployee } from '../../services/employeeAuth'
 
 const config = staffnetConfig
 const router = useRouter()
@@ -9,59 +10,50 @@ const router = useRouter()
 const employeeId = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const submitting = ref(false)
+const error = ref('')
 
-function login() {
-  // Solo interfaz: sin validaciones ni backend por ahora.
-  router.push({ name: 'staff-home' })
+async function login() {
+  if (submitting.value) return
+  submitting.value = true
+  error.value = ''
+  try {
+    await loginEmployee(employeeId.value, password.value)
+    router.push({ name: 'staff-home' })
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : config.login.errorFallback
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
 <template>
   <div class="sn-login">
-    <!-- Panel de marca -->
-    <aside class="sn-login__brand">
-      <div class="sn-login__brand-inner">
-        <div class="sn-login__logo-card">
-          <img
-            src="/img/fisinor-logo-full.png"
-            :alt="config.brand.companyName"
-            class="sn-login__logo"
-          />
-        </div>
+    <!-- Fondo decorativo: retícula ERP -->
+    <div class="sn-login__grid-bg" aria-hidden="true"></div>
 
-        <div class="sn-login__brand-text">
-          <span class="sn-login__net">{{ config.brand.netName }}</span>
-          <span class="sn-login__tagline">{{ config.login.brandTagline }}</span>
-        </div>
-
-        <ul class="sn-login__highlights">
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" class="sn-login__check" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            Recursos Humanos, nómina y asistencia
-          </li>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" class="sn-login__check" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            Gestor documental y protocolos internos
-          </li>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" class="sn-login__check" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            Mensajería y mesa de ayuda de TI
-          </li>
-        </ul>
-      </div>
-    </aside>
-
-    <!-- Formulario de acceso -->
+    <!-- Tarjeta centrada en el viewport -->
     <main class="sn-login__panel">
       <div class="sn-login__card">
-        <h1 class="sn-login__title">{{ config.login.title }}</h1>
-        <p class="sn-login__subtitle">{{ config.login.subtitle }}</p>
+        <!-- Encabezado corporativo -->
+        <header class="sn-login__head">
+          <div class="sn-login__logo-card">
+            <img
+              src="/img/fisinor-logo-full.png"
+              :alt="config.brand.companyName"
+              class="sn-login__logo"
+            />
+          </div>
+          <div class="sn-login__brand-text">
+            <span class="sn-login__net">{{ config.brand.netName }}</span>
+            <span class="sn-login__tagline">{{ config.login.brandTagline }}</span>
+          </div>
+        </header>
+
+        <div class="sn-login__divider" role="presentation">
+          <span class="sn-login__divider-label">{{ config.login.title }}</span>
+        </div>
 
         <form class="sn-login__form" @submit.prevent="login">
           <div class="sn-login__field">
@@ -105,8 +97,10 @@ function login() {
             </div>
           </div>
 
-          <button type="submit" class="sn-login__submit">
-            {{ config.login.submitLabel }}
+          <p v-if="error" class="sn-login__error" role="alert">{{ error }}</p>
+
+          <button type="submit" class="sn-login__submit" :disabled="submitting">
+            {{ submitting ? config.login.submittingLabel : config.login.submitLabel }}
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
@@ -126,148 +120,161 @@ function login() {
 
         <p class="sn-login__legal">{{ config.login.legalNote }}</p>
       </div>
+
+      <!-- Pie ERP con módulos del portal -->
+      <ul class="sn-login__modules" aria-label="Módulos del portal">
+        <li v-for="highlight in config.login.highlights" :key="highlight">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="sn-login__check" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+          {{ highlight }}
+        </li>
+      </ul>
     </main>
   </div>
 </template>
 
 <style scoped>
 .sn-login {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  place-items: center;
   min-height: 100dvh;
+  padding: 24px;
   background: var(--sn-bg);
+  overflow: hidden;
 }
 
-/* ---------- Panel de marca ---------- */
-.sn-login__brand {
+/* Retícula técnica de fondo, sutil, estilo papel de formulario ERP */
+.sn-login__grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(30, 58, 138, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 58, 138, 0.055) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(ellipse 72% 68% at 50% 42%, #000 35%, transparent 100%);
+}
+
+/* ---------- Tarjeta centrada ---------- */
+.sn-login__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(430px, 100%);
+}
+
+.sn-login__card {
+  width: 100%;
+  padding: 28px 30px 24px;
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  border-top: 3px solid var(--sn-navy);
+  border-radius: 14px;
+  box-shadow: 0 22px 48px -22px rgba(15, 23, 42, 0.4);
+}
+
+/* Encabezado de marca */
+.sn-login__head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 48px 40px;
-  background:
-    radial-gradient(46rem 30rem at 120% 115%, rgba(2, 132, 199, 0.28), transparent 60%),
-    linear-gradient(160deg, var(--sn-navy) 0%, #0f172a 100%);
-}
-
-.sn-login__brand-inner {
-  width: min(400px, 100%);
+  gap: 14px;
 }
 
 .sn-login__logo-card {
   display: grid;
   place-items: center;
-  width: 100%;
-  padding: 30px 24px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 24px 48px -20px rgba(2, 8, 20, 0.65);
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  padding: 10px;
+  border: 1px solid var(--sn-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--sn-shadow);
 }
 
 .sn-login__logo {
-  width: 230px;
+  width: 100%;
   height: auto;
 }
 
 .sn-login__brand-text {
-  margin-top: 26px;
+  min-width: 0;
 }
 
 .sn-login__net {
   display: block;
-  font-size: 30px;
+  font-size: 19px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #fff;
+  letter-spacing: -0.01em;
+  color: var(--sn-ink);
 }
 
 .sn-login__tagline {
   display: block;
   margin-top: 3px;
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--sn-ink-faint);
 }
 
-.sn-login__highlights {
-  list-style: none;
-  margin: 26px 0 0;
-  padding: 22px 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  display: grid;
-  gap: 12px;
-}
-
-.sn-login__highlights li {
+/* Divisor de sección tipo expediente */
+.sn-login__divider {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-  color: rgba(255, 255, 255, 0.82);
+  gap: 12px;
+  margin: 20px 0 18px;
 }
 
-.sn-login__check {
-  width: 16px;
-  height: 16px;
-  color: var(--sn-green);
-  flex-shrink: 0;
+.sn-login__divider::before,
+.sn-login__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--sn-border);
+}
+
+.sn-login__divider-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sn-navy);
+  white-space: nowrap;
 }
 
 /* ---------- Formulario ---------- */
-.sn-login__panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 28px;
-  background: var(--sn-bg);
-}
-
-.sn-login__card {
-  width: min(400px, 100%);
-}
-
-.sn-login__title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--sn-ink);
-}
-
-.sn-login__subtitle {
-  margin: 8px 0 0;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--sn-ink-soft);
-}
-
 .sn-login__form {
-  margin-top: 28px;
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .sn-login__field {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .sn-login__label {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--sn-ink);
 }
 
 .sn-login__input {
   width: 100%;
-  padding: 11px 13px;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
-  background: #fff;
+  padding: 10px 12px;
+  border: 1px solid var(--sn-border);
+  border-radius: 8px;
+  background: var(--sn-bg-soft);
   font-family: var(--sn-font);
   font-size: 13.5px;
   color: var(--sn-ink);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .sn-login__input::placeholder {
@@ -276,6 +283,7 @@ function login() {
 
 .sn-login__input:focus {
   outline: none;
+  background: #fff;
   border-color: var(--sn-blue);
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
@@ -296,8 +304,8 @@ function login() {
   translate: 0 -50%;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 7px;
   background: none;
@@ -307,13 +315,23 @@ function login() {
 }
 
 .sn-login__toggle svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 .sn-login__toggle:hover {
   color: var(--sn-blue);
   background: var(--sn-blue-soft);
+}
+
+.sn-login__error {
+  padding: 8px 11px;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 8px;
+  background: var(--sn-red-soft);
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .sn-login__submit {
@@ -322,45 +340,51 @@ function login() {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 4px;
   padding: 12px 20px;
   border: none;
-  border-radius: 10px;
+  border-radius: 9px;
   background: linear-gradient(120deg, var(--sn-navy), #0f172a);
   color: #fff;
   font-family: var(--sn-font);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.5);
+  box-shadow: 0 10px 26px -14px rgba(15, 23, 42, 0.55);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .sn-login__submit svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   transition: transform 0.15s;
 }
 
-.sn-login__submit:hover {
+.sn-login__submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 14px 32px -14px rgba(15, 23, 42, 0.6);
+  box-shadow: 0 16px 34px -16px rgba(15, 23, 42, 0.65);
 }
 
-.sn-login__submit:hover svg {
+.sn-login__submit:hover:not(:disabled) svg {
   transform: translateX(3px);
 }
 
+.sn-login__submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+/* ---------- Notas ---------- */
 .sn-login__note {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin-top: 22px;
+  margin-top: 20px;
   padding: 10px 13px;
-  border: 1px solid rgba(30, 58, 138, 0.2);
-  border-radius: 10px;
+  border: 1px solid rgba(30, 58, 138, 0.18);
+  border-radius: 9px;
   background: var(--sn-navy-soft);
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.6;
   color: var(--sn-navy);
 }
@@ -373,38 +397,58 @@ function login() {
 }
 
 .sn-login__legal {
-  margin: 18px 0 0;
-  font-size: 10.5px;
+  margin: 14px 0 0;
+  font-size: 10px;
   text-align: center;
   color: var(--sn-ink-faint);
 }
 
+/* ---------- Pie con módulos ---------- */
+.sn-login__modules {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+}
+
+.sn-login__modules li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sn-ink-soft);
+}
+
+.sn-login__check {
+  width: 13px;
+  height: 13px;
+  color: var(--sn-green);
+  flex-shrink: 0;
+}
+
 /* ---------- Responsivo ---------- */
-@media (max-width: 900px) {
+@media (max-width: 520px) {
   .sn-login {
-    grid-template-columns: 1fr;
+    padding: 16px;
   }
 
-  .sn-login__brand {
-    padding: 30px 24px;
+  .sn-login__card {
+    padding: 22px 20px 20px;
   }
 
-  .sn-login__highlights {
-    display: none;
+  .sn-login__head {
+    flex-direction: column;
+    text-align: center;
   }
 
-  .sn-login__logo-card {
-    width: fit-content;
-    padding: 16px 22px;
-  }
-
-  .sn-login__logo {
-    width: 170px;
-  }
-
-  .sn-login__panel {
-    align-items: flex-start;
-    padding-top: 28px;
+  .sn-login__modules {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
 }
 </style>

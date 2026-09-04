@@ -140,6 +140,29 @@ body {
 }
 
 /* Ficha de usuario */
+.sn-user__logout {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--sn-ink-faint);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sn-user__logout svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sn-user__logout:hover {
+  color: var(--sn-red);
+  background: var(--sn-red-soft);
+}
+
 .sn-user {
   margin-left: auto;
   display: flex;

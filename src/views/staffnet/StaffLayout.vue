@@ -2,11 +2,36 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { staffnetConfig } from '../../config/staffnetConfig'
-import { staffAnnouncements, staffUser } from '../../mocks/staffnetData'
+import { staffAnnouncements } from '../../mocks/staffnetData'
+import { displayNameOf, employeeAccount, fetchCurrentEmployee, logoutEmployee } from '../../services/employeeAuth'
 
 const route = useRoute()
 const router = useRouter()
 const config = staffnetConfig
+
+const sessionEmployee = computed(() => employeeAccount.value)
+const employeeInitials = computed(() =>
+  displayNameOf(employeeAccount.value)
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase(),
+)
+
+function logout() {
+  void logoutEmployee().then(() => {
+    router.push({ name: 'staff-login' })
+  })
+}
+
+// Valida la sesión completa al montar; sin sesión válida, regresa al login.
+void fetchCurrentEmployee().then((account) => {
+  if (!account) {
+    router.push({ name: 'staff-login' })
+  }
+})
 
 // Banner rotativo de comunicados
 const announcementIndex = ref(0)
@@ -78,12 +103,23 @@ const navIconPaths: Record<string, string> = {
         </div>
 
         <div class="sn-user" :title="config.header.userTitle">
-          <span class="sn-user__avatar" aria-hidden="true">{{ staffUser.initials }}</span>
+          <span class="sn-user__avatar" aria-hidden="true">{{ employeeInitials }}</span>
           <span>
-            <span class="sn-user__name">{{ staffUser.name }}</span>
-            <span class="sn-user__meta">{{ staffUser.department }}</span>
-            <span class="sn-user__id">ID: {{ staffUser.id }}</span>
+            <span class="sn-user__name">{{ sessionEmployee ? displayNameOf(sessionEmployee) : '' }}</span>
+            <span class="sn-user__meta">{{ sessionEmployee?.position }}</span>
+            <span class="sn-user__id">ID: {{ sessionEmployee?.employeeNumber }}</span>
           </span>
+          <button
+            type="button"
+            class="sn-user__logout"
+            :aria-label="config.header.userTitle"
+            title="Cerrar sesión"
+            @click="logout"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>

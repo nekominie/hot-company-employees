@@ -21,12 +21,17 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     // ===== StaffNet (intranet corporativa clara) =====
+    // El login es la vista inicial del portal: sin sesión, todo redirige aquí.
     { path: '/empleados/login', name: 'staff-login', component: StaffLogin },
     {
       path: '/empleados',
       component: StaffLayout,
+      beforeEnter: () => {
+        // Guard ligero por token local; la validación completa se hace vía /me.
+        return localStorage.getItem('fisinor_employee_token') ? true : { name: 'staff-login' }
+      },
       children: [
-        { path: '', redirect: { name: 'staff-home' } },
+        { path: '', redirect: { name: 'staff-login' } },
         { path: 'inicio', name: 'staff-home', component: StaffHome },
         { path: 'chat', name: 'staff-chat', component: StaffChat },
         { path: 'directorio', name: 'staff-directory', component: StaffDirectory },
