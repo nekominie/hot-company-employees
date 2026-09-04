@@ -32,6 +32,20 @@ export interface StaffNetConfig {
     enterLabel: string
     cancelLabel: string
   }
+  login: {
+    brandTagline: string
+    title: string
+    subtitle: string
+    employeeIdLabel: string
+    employeeIdPlaceholder: string
+    passwordLabel: string
+    passwordPlaceholder: string
+    showLabel: string
+    hideLabel: string
+    submitLabel: string
+    adminNote: string
+    legalNote: string
+  }
   home: {
     title: string
     subtitle: string
@@ -86,6 +100,30 @@ export interface StaffNetConfig {
     knownTitle: string
     knownItems: { id: string; label: string }[]
   }
+  chat: {
+    title: string
+    subtitle: string
+    searchPlaceholder: string
+    newChatLabel: string
+    newChatTitle: string
+    pinnedLabel: string
+    recentLabel: string
+    emptyListLabel: string
+    selectConversationHint: string
+    typingLabel: string
+    composerPlaceholder: string
+    sendLabel: string
+    youLabel: string
+    todayLabel: string
+    yesterdayLabel: string
+    presenceLabels: Record<'online' | 'away' | 'busy' | 'offline', string>
+    detailsTitle: string
+    detailsEmailLabel: string
+    detailsExtensionLabel: string
+    detailsFilesLabel: string
+    attachNote: string
+    demoNote: string
+  }
 }
 
 export const staffnetConfig: StaffNetConfig = {
@@ -98,7 +136,9 @@ export const staffnetConfig: StaffNetConfig = {
   documentTitles: {
     base: 'FISINOR StaffNet // Portal de Personal',
     pages: {
+      'staff-login': 'Acceso',
       'staff-home': 'Inicio',
+      'staff-chat': 'Mensajes',
       'staff-directory': 'Directorio de Personal',
       'staff-documents': 'Documentos y Plantillas',
       'staff-services': 'Mesa de Ayuda IT',
@@ -115,6 +155,7 @@ export const staffnetConfig: StaffNetConfig = {
     menuLabel: 'Menú',
     nav: [
       { id: 'home', label: 'Inicio / Dashboard General', routeName: 'staff-home' },
+      { id: 'chat', label: 'Mensajes', routeName: 'staff-chat' },
       { id: 'directory', label: 'Directorio de Personal', routeName: 'staff-directory' },
       { id: 'documents', label: 'Gestor de Documentos y Plantillas', routeName: 'staff-documents' },
       { id: 'services', label: 'Mesa de Ayuda y Solicitudes IT', routeName: 'staff-services' },
@@ -136,6 +177,23 @@ export const staffnetConfig: StaffNetConfig = {
     enterLabel: '[ INGRESAR A LA CONSOLA ]',
     cancelLabel: 'Cancelar',
   },
+
+  login: {
+    brandTagline: 'Portal de Personal · FISINOR S.A. de C.V.',
+    title: 'Acceso al portal',
+    subtitle: 'Ingresa con tus credenciales institucionales para continuar.',
+    employeeIdLabel: 'Correo institucional o N.º de empleado',
+    employeeIdPlaceholder: 'nombre@fisinor.com.mx · EMP-0000',
+    passwordLabel: 'Contraseña',
+    passwordPlaceholder: 'Tu contraseña de StaffNet',
+    showLabel: 'Mostrar contraseña',
+    hideLabel: 'Ocultar contraseña',
+    submitLabel: 'Iniciar sesión',
+    adminNote:
+      'Las cuentas de StaffNet son administradas por Recursos Humanos y el Dpto. de Credenciales. Para obtener acceso, contacta a tu coordinador de área.',
+    legalNote: '© FISINOR S.A. de C.V. — Acceso monitoreado. Uso exclusivo del personal homologado.',
+  },
+
   home: {
     title: 'Inicio / Dashboard General',
     subtitle: 'Bienvenida a StaffNet, Dra. Rostova. Este es su tablero de servicios internos.',
@@ -235,5 +293,35 @@ export const staffnetConfig: StaffNetConfig = {
       { id: 'k-2', label: 'Impresora del área administrativa: reinicie la cola desde el panel de Mantenimiento.' },
       { id: 'k-3', label: 'Para licencias de software nuevo, adjunte la autorización de su jefe de departamento.' },
     ],
+  },
+
+  chat: {
+    title: 'Mensajes',
+    subtitle: 'Comunícate con el personal del campus en tiempo real.',
+    searchPlaceholder: 'Buscar conversaciones o personas',
+    newChatLabel: 'Nuevo chat',
+    newChatTitle: 'Iniciar una conversación',
+    pinnedLabel: 'Anclados',
+    recentLabel: 'Mensajes',
+    emptyListLabel: 'Sin conversaciones que coincidan con la búsqueda.',
+    selectConversationHint: 'Selecciona un chat para comenzar a conversar.',
+    typingLabel: 'Escribiendo...',
+    composerPlaceholder: 'Escribe un mensaje...',
+    sendLabel: 'Enviar mensaje',
+    youLabel: 'Tú',
+    todayLabel: 'Hoy',
+    yesterdayLabel: 'Ayer',
+    presenceLabels: {
+      online: 'En línea',
+      away: 'Ausente',
+      busy: 'Ocupado',
+      offline: 'Desconectado',
+    },
+    detailsTitle: 'Detalles del contacto',
+    detailsEmailLabel: 'Correo',
+    detailsExtensionLabel: 'Extensión',
+    detailsFilesLabel: 'Archivos compartidos',
+    attachNote: 'El envío de archivos estará disponible en una fase posterior.',
+    demoNote: 'Chat simulado — las respuestas se generan automáticamente (modo demostración).',
   },
 }

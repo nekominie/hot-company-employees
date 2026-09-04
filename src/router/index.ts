@@ -2,10 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { staffnetConfig } from '../config/staffnetConfig'
 import { employeePortalConfig } from '../config/employeePortalConfig'
 import StaffLayout from '../views/staffnet/StaffLayout.vue'
+import StaffLogin from '../views/staffnet/StaffLogin.vue'
 import StaffHome from '../views/staffnet/StaffHome.vue'
 import StaffDirectory from '../views/staffnet/StaffDirectory.vue'
 import StaffDocuments from '../views/staffnet/StaffDocuments.vue'
 import StaffServices from '../views/staffnet/StaffServices.vue'
+import StaffChat from '../views/staffnet/StaffChat.vue'
 import ConsoleLogin from '../views/console/ConsoleLogin.vue'
 import ConsoleLayout from '../views/console/ConsoleLayout.vue'
 import ConsoleDashboard from '../views/console/ConsoleDashboard.vue'
@@ -19,12 +21,14 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     // ===== StaffNet (intranet corporativa clara) =====
+    { path: '/empleados/login', name: 'staff-login', component: StaffLogin },
     {
       path: '/empleados',
       component: StaffLayout,
       children: [
         { path: '', redirect: { name: 'staff-home' } },
         { path: 'inicio', name: 'staff-home', component: StaffHome },
+        { path: 'chat', name: 'staff-chat', component: StaffChat },
         { path: 'directorio', name: 'staff-directory', component: StaffDirectory },
         { path: 'documentos', name: 'staff-documents', component: StaffDocuments },
         { path: 'servicios', name: 'staff-services', component: StaffServices },
@@ -48,7 +52,6 @@ export const router = createRouter({
     },
 
     // Redirecciones de rutas antiguas del terminal
-    { path: '/empleados/login', redirect: { name: 'staff-home' } },
     { path: '/empleados/dashboard', redirect: { name: 'console-dashboard' } },
     { path: '/empleados/archivos', redirect: { name: 'console-files' } },
     { path: '/empleados/incidentes', redirect: { name: 'console-incidents' } },
