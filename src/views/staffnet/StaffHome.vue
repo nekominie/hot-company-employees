@@ -1,16 +1,49 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { staffnetConfig } from '../../config/staffnetConfig'
 import {
   serviceCards,
-  staffBulletins,
   recentDocuments,
   type ServiceCard,
 } from '../../mocks/staffnetData'
+import { employeeAccount, displayNameOf } from '../../services/employeeAuth'
+import { fetchStaffBulletins, type StaffBulletin } from '../../services/employeePortal'
 
 const config = staffnetConfig
 
 const demoServiceId = ref<string | null>(null)
+const bulletins = ref<StaffBulletin[]>([])
+const bulletinsLoading = ref(true)
+
+// Saludo con el nombre del empleado en sesión (respaldo genérico si aún carga).
+const welcomeSubtitle = computed(() =>
+  config.home.subtitle.replace('{name}', displayNameOf(employeeAccount.value) || 'colaborador'),
+)
+
+function bulletinDateOf(publishedAt: string): { day: string; month: string } {
+  const date = new Date(publishedAt)
+  if (Number.isNaN(date.getTime())) {
+    return { day: '—', month: '' }
+  }
+  return {
+    day: String(date.getDate()).padStart(2, '0'),
+    month: date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '').toUpperCase(),
+  }
+}
+
+async function loadBulletins() {
+  try {
+    bulletins.value = await fetchStaffBulletins()
+  } catch {
+    // Sin conexión o sin sesión, el panel muestra su estado vacío.
+  } finally {
+    bulletinsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadBulletins()
+})
 
 const serviceIconPaths: Record<ServiceCard['icon'], string> = {
   wallet:
@@ -32,7 +65,7 @@ function openService(id: string) {
   <section class="sn-stack">
     <div class="sn-page__head">
       <h1 class="sn-page__title">{{ config.home.title }}</h1>
-      <p class="sn-page__subtitle">{{ config.home.subtitle }}</p>
+      <p class="sn-page__subtitle">{{ welcomeSubtitle }}</p>
     </div>
 
     <div>
@@ -72,16 +105,26 @@ function openService(id: string) {
           </div>
         </div>
         <div class="sn-card__body">
-          <article v-for="bulletin in staffBulletins" :key="bulletin.id" class="sn-bulletin">
-            <div class="sn-bulletin__date">
-              <span class="sn-bulletin__day">{{ bulletin.day }}</span>
-              <span class="sn-bulletin__month">{{ bulletin.month }}</span>
-            </div>
-            <div>
-              <h3 class="sn-bulletin__title">{{ bulletin.title }}</h3>
-              <p class="sn-bulletin__excerpt">{{ bulletin.excerpt }}</p>
-            </div>
-          </article>
+          <div v-if="bulletinsLoading" class="sn-doc-row__meta" style="padding: 18px 0; text-align: center">
+            Cargando avisos...
+          </div>
+
+          <template v-else>
+            <article v-for="bulletin in bulletins" :key="bulletin.id" class="sn-bulletin">
+              <div class="sn-bulletin__date">
+                <span class="sn-bulletin__day">{{ bulletinDateOf(bulletin.publishedAt).day }}</span>
+                <span class="sn-bulletin__month">{{ bulletinDateOf(bulletin.publishedAt).month }}</span>
+              </div>
+              <div>
+                <h3 class="sn-bulletin__title">{{ bulletin.title }}</h3>
+                <p class="sn-bulletin__excerpt">{{ bulletin.message }}</p>
+              </div>
+            </article>
+
+            <p v-if="bulletins.length === 0" class="sn-doc-row__meta" style="padding: 14px 0">
+              {{ config.home.bulletinsEmpty }}
+            </p>
+          </template>
         </div>
       </article>
 

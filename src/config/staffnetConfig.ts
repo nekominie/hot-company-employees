@@ -56,6 +56,7 @@ export interface StaffNetConfig {
     demoNotice: string
     bulletinsTitle: string
     bulletinsSubtitle: string
+    bulletinsEmpty: string
     recentDocsTitle: string
     recentDocsSubtitle: string
     openLabel: string
@@ -64,19 +65,23 @@ export interface StaffNetConfig {
     title: string
     subtitle: string
     filterAllLabel: string
-    columns: Record<'name' | 'department' | 'extension' | 'email' | 'status', string>
-    statusLabels: Record<'office' | 'field' | 'lab', string>
+    columns: Record<'name' | 'department' | 'employeeNumber' | 'email' | 'status', string>
+    statusLabels: Record<'desconectado' | 'disponible' | 'ocupado' | 'fuera_oficina' | 'ausente', string>
+    statusChipClasses: Record<'desconectado' | 'disponible' | 'ocupado' | 'fuera_oficina' | 'ausente', string>
   }
   documents: {
     title: string
     subtitle: string
     foldersLabel: string
+    rootLabel: string
     columns: Record<'name' | 'type' | 'size' | 'modified' | 'owner' | 'actions', string>
     viewLabel: string
     downloadLabel: string
     emptyFolder: string
     downloadNote: string
     previewClassification: string
+    previewNotSupported: string
+    loadError: string
   }
   services: {
     title: string
@@ -123,6 +128,7 @@ export interface StaffNetConfig {
     detailsTitle: string
     detailsEmailLabel: string
     detailsExtensionLabel: string
+    detailsDepartmentLabel: string
     detailsFilesLabel: string
     attachNote: string
     demoNote: string
@@ -206,11 +212,12 @@ export const staffnetConfig: StaffNetConfig = {
 
   home: {
     title: 'Inicio / Dashboard General',
-    subtitle: 'Bienvenida a StaffNet, Dra. Rostova. Este es su tablero de servicios internos.',
+    subtitle: 'Te damos la bienvenida a StaffNet, {name}. Este es tu tablero de servicios internos.',
     servicesTitle: 'Servicios Internos',
     demoNotice: 'Vista de demostración: este módulo se conectará al backend en una fase posterior.',
     bulletinsTitle: 'Avisos de Recursos Humanos y Dirección',
     bulletinsSubtitle: 'Boletines corporativos vigentes para todo el personal.',
+    bulletinsEmpty: 'Sin avisos vigentes por ahora. Consulta esta sección periódicamente.',
     recentDocsTitle: 'Documentos Recientes',
     recentDocsSubtitle: 'Acceso rápido a los archivos que ha consultado su área.',
     openLabel: 'Abrir',
@@ -222,20 +229,30 @@ export const staffnetConfig: StaffNetConfig = {
     columns: {
       name: 'Nombre',
       department: 'Departamento',
-      extension: 'Extensión',
+      employeeNumber: 'N.º de empleado',
       email: 'Correo',
       status: 'Estatus',
     },
     statusLabels: {
-      office: 'En oficina',
-      field: 'En campo',
-      lab: 'En laboratorio',
+      desconectado: 'Desconectado',
+      disponible: 'Disponible',
+      ocupado: 'Ocupado',
+      fuera_oficina: 'Fuera de oficina',
+      ausente: 'Ausente',
+    },
+    statusChipClasses: {
+      desconectado: 'sn-badge--gray',
+      disponible: 'sn-badge--green',
+      ocupado: 'sn-badge--red',
+      fuera_oficina: 'sn-badge--amber',
+      ausente: 'sn-badge--blue',
     },
   },
   documents: {
     title: 'Gestor de Documentos y Plantillas',
     subtitle: 'Repositorio corporativo de manuales, plantillas y protocolos de uso interno.',
     foldersLabel: 'Carpetas',
+    rootLabel: 'Raíz',
     columns: {
       name: 'Nombre',
       type: 'Tipo',
@@ -247,8 +264,10 @@ export const staffnetConfig: StaffNetConfig = {
     viewLabel: 'Ver',
     downloadLabel: 'Descargar',
     emptyFolder: 'No hay documentos en esta carpeta.',
-    downloadNote: 'La descarga de "{name}" se simuló correctamente (modo de demostración).',
+    downloadNote: 'Descarga de "{name}" iniciada.',
     previewClassification: 'Documento de uso interno — Prohibida su distribución fuera de FISINOR.',
+    previewNotSupported: 'Este documento solo está disponible para descarga.',
+    loadError: 'No se pudieron cargar tus documentos.',
   },
   services: {
     title: 'Mesa de Ayuda y Solicitudes IT',
@@ -329,7 +348,8 @@ export const staffnetConfig: StaffNetConfig = {
     },
     detailsTitle: 'Detalles del contacto',
     detailsEmailLabel: 'Correo',
-    detailsExtensionLabel: 'Extensión',
+    detailsExtensionLabel: 'Número de empleado',
+    detailsDepartmentLabel: 'Departamento',
     detailsFilesLabel: 'Archivos compartidos',
     attachNote: 'El envío de archivos estará disponible en una fase posterior.',
     demoNote: 'Chat simulado — las respuestas se generan automáticamente (modo demostración).',

@@ -11,17 +11,39 @@ const employeeId = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const submitting = ref(false)
-const error = ref('')
+
+// Toast de error: flotante, no afecta el layout y se autodescarta.
+const toast = ref<string | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | undefined
+
+function showToast(message: string) {
+  toast.value = message
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toast.value = null
+  }, 5000)
+}
+
+function dismissToast() {
+  clearTimeout(toastTimer)
+  toast.value = null
+}
 
 async function login() {
   if (submitting.value) return
+
+  const identifier = employeeId.value.trim()
+  if (!identifier || !password.value) {
+    showToast('Ingresa tu número de empleado o correo y tu contraseña.')
+    return
+  }
+
   submitting.value = true
-  error.value = ''
   try {
-    await loginEmployee(employeeId.value, password.value)
+    await loginEmployee(identifier, password.value)
     router.push({ name: 'staff-home' })
   } catch (err) {
-    error.value = err instanceof Error ? err.message : config.login.errorFallback
+    showToast(err instanceof Error ? err.message : config.login.errorFallback)
   } finally {
     submitting.value = false
   }
@@ -30,8 +52,33 @@ async function login() {
 
 <template>
   <div class="sn-login">
-    <!-- Fondo decorativo: retícula ERP -->
+    <!-- Toast de error: flotante, fuera del flujo del formulario -->
+    <Transition name="toast">
+      <div v-if="toast" class="sn-toast" role="alert">
+        <svg class="sn-toast__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+        <p class="sn-toast__message">{{ toast }}</p>
+        <button type="button" class="sn-toast__close" aria-label="Cerrar aviso" @click="dismissToast">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </Transition>
+
+    <!-- Marca de agua: logo institucional grande y translúcido -->
+    <img
+      src="/img/icon_fisinor.png"
+      alt=""
+      aria-hidden="true"
+      class="sn-login__watermark"
+    />
+
+    <!-- Fondo decorativo: retícula ERP sobre degradado corporativo -->
     <div class="sn-login__grid-bg" aria-hidden="true"></div>
+    <div class="sn-login__glow sn-login__glow--cyan" aria-hidden="true"></div>
+    <div class="sn-login__glow sn-login__glow--amber" aria-hidden="true"></div>
 
     <!-- Tarjeta centrada en el viewport -->
     <main class="sn-login__panel">
@@ -97,10 +144,7 @@ async function login() {
             </div>
           </div>
 
-          <p v-if="error" class="sn-login__error" role="alert">{{ error }}</p>
-
-          <button type="submit" class="sn-login__submit" :disabled="submitting">
-            {{ submitting ? config.login.submittingLabel : config.login.submitLabel }}
+          <button type="submit" class="sn-login__submit" :disabled="submitting">            {{ submitting ? config.login.submittingLabel : config.login.submitLabel }}
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
             </svg>
@@ -141,8 +185,47 @@ async function login() {
   place-items: center;
   min-height: 100dvh;
   padding: 24px;
-  background: var(--sn-bg);
+  background:
+    radial-gradient(52rem 34rem at 88% -8%, rgba(23, 153, 181, 0.1), transparent 62%),
+    radial-gradient(46rem 30rem at -10% 108%, rgba(240, 158, 42, 0.08), transparent 58%),
+    linear-gradient(165deg, #f7fafd 0%, #eef3f9 55%, #e9f0f7 100%);
   overflow: hidden;
+}
+
+/* Logo institucional gigante al costado, apenas visible (marca de agua) */
+.sn-login__watermark {
+  position: absolute;
+  top: 50%;
+  right: -16vmin;
+  translate: 0 -50%;
+  width: min(88vmin, 880px);
+  opacity: 0.055;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Halos suaves de color de marca */
+.sn-login__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+.sn-login__glow--cyan {
+  top: -140px;
+  right: -120px;
+  width: 420px;
+  height: 420px;
+  background: rgba(23, 153, 181, 0.14);
+}
+
+.sn-login__glow--amber {
+  bottom: -160px;
+  left: -140px;
+  width: 380px;
+  height: 380px;
+  background: rgba(240, 158, 42, 0.1);
 }
 
 /* Retícula técnica de fondo, sutil, estilo papel de formulario ERP */
@@ -150,8 +233,8 @@ async function login() {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(30, 58, 138, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30, 58, 138, 0.055) 1px, transparent 1px);
+    linear-gradient(rgba(30, 58, 138, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 58, 138, 0.045) 1px, transparent 1px);
   background-size: 34px 34px;
   mask-image: radial-gradient(ellipse 72% 68% at 50% 42%, #000 35%, transparent 100%);
 }
@@ -173,7 +256,7 @@ async function login() {
   border: 1px solid var(--sn-border);
   border-top: 3px solid var(--sn-navy);
   border-radius: 14px;
-  box-shadow: 0 22px 48px -22px rgba(15, 23, 42, 0.4);
+  box-shadow: 0 24px 55px -26px rgba(15, 23, 42, 0.35);
 }
 
 /* Encabezado de marca */
@@ -324,14 +407,72 @@ async function login() {
   background: var(--sn-blue-soft);
 }
 
-.sn-login__error {
-  padding: 8px 11px;
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  border-radius: 8px;
-  background: var(--sn-red-soft);
-  color: #991b1b;
-  font-size: 12px;
+/* ---------- Toast de error (flotante) ---------- */
+.sn-toast {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 80;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: max-content;
+  max-width: min(400px, calc(100vw - 44px));
+  padding: 13px 14px;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-left: 4px solid #dc2626;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 44px -16px rgba(15, 23, 42, 0.45);
+}
+
+.sn-toast__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #dc2626;
+}
+
+.sn-toast__message {
+  margin: 0;
+  font-size: 13px;
   font-weight: 600;
+  line-height: 1.55;
+  color: #991b1b;
+}
+
+.sn-toast__close {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--sn-ink-faint);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.sn-toast__close svg {
+  width: 15px;
+  height: 15px;
+}
+
+.sn-toast__close:hover {
+  color: var(--sn-ink);
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .sn-login__submit {
@@ -431,6 +572,13 @@ async function login() {
 }
 
 /* ---------- Responsivo ---------- */
+@media (min-width: 1100px) {
+  /* La tarjeta se abre hacia la izquierda para dejar protagonismo al logo lateral */
+  .sn-login__panel {
+    translate: -120px 0;
+  }
+}
+
 @media (max-width: 520px) {
   .sn-login {
     padding: 16px;

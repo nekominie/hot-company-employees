@@ -13,6 +13,8 @@ export interface EmployeeAccountInfo {
   firstName: string
   lastNamePaternal: string | null
   position: string
+  department: string | null
+  status: string
 }
 
 interface EmployeeAuthPayload {
@@ -24,6 +26,8 @@ interface EmployeeAuthPayload {
     firstName: string
     lastNamePaternal: string | null
     position: string
+    department: string | null
+    status: string
   }
 }
 
@@ -39,6 +43,8 @@ function mapAccount(raw: EmployeeAuthPayload['account']): EmployeeAccountInfo {
     firstName: raw.firstName,
     lastNamePaternal: raw.lastNamePaternal,
     position: raw.position,
+    department: raw.department,
+    status: raw.status,
   }
 }
 
@@ -49,7 +55,9 @@ export function displayNameOf(account: EmployeeAccountInfo | null): string {
     .join(' ')
 }
 
-async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+const CONNECTION_ERROR = 'No fue posible establecer la conexión con el servidor. Verifica tu red e intenta de nuevo.'
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     ...(init.headers as Record<string, string> | undefined),
   }
@@ -60,12 +68,28 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers['Content-Type'] = 'application/json'
   }
 
-  const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, { ...init, headers })
+  } catch {
+    // El navegador no alcanzó al servidor (sin red, servidor apagado).
+    throw new Error(CONNECTION_ERROR)
+  }
   const payload = await response.json().catch(() => null)
 
   if (!response.ok) {
+    // 502/503/504: el proxy responde pero la API no está disponible.
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      throw new Error(CONNECTION_ERROR)
+    }
+
+    const validationMessage =
+      payload && typeof payload === 'object' && 'errors' in payload
+        ? Object.values((payload.errors ?? {}) as Record<string, string[]>).flat()[0]
+        : undefined
     const message =
       (payload && typeof payload === 'object' && 'message' in payload && String(payload.message)) ||
+      (typeof validationMessage === 'string' ? validationMessage : undefined) ||
       `Error ${response.status}`
     throw new Error(message)
   }
