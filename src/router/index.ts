@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { staffnetConfig } from '../config/staffnetConfig'
 import { employeePortalConfig } from '../config/employeePortalConfig'
+import { hasPortalAccess } from '../services/accessGate'
+import AccessBlocked from '../views/AccessBlocked.vue'
 import StaffLayout from '../views/staffnet/StaffLayout.vue'
 import StaffLogin from '../views/staffnet/StaffLogin.vue'
 import StaffHome from '../views/staffnet/StaffHome.vue'
@@ -21,15 +23,13 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     // ===== StaffNet (intranet corporativa clara) =====
-    // El login es la vista inicial del portal: sin sesión, todo redirige aquí.
+    // Bloqueado por defecto: solo entra sesión de personal válida o pase de cliente vigente.
     { path: '/empleados/login', name: 'staff-login', component: StaffLogin },
+    { path: '/empleados/bloqueado', name: 'access-blocked', component: AccessBlocked },
     {
       path: '/empleados',
       component: StaffLayout,
-      beforeEnter: () => {
-        // Guard ligero por token local; la validación completa se hace vía /me.
-        return localStorage.getItem('fisinor_employee_token') ? true : { name: 'staff-login' }
-      },
+      meta: { requiresPortalAccess: true },
       children: [
         { path: '', redirect: { name: 'staff-login' } },
         { path: 'inicio', name: 'staff-home', component: StaffHome },
@@ -45,6 +45,7 @@ export const router = createRouter({
     {
       path: '/empleados/console',
       component: ConsoleLayout,
+      meta: { requiresPortalAccess: true },
       children: [
         { path: '', redirect: { name: 'console-dashboard' } },
         { path: 'dashboard', name: 'console-dashboard', component: ConsoleDashboard },
@@ -65,6 +66,19 @@ export const router = createRouter({
 
     { path: '/:pathMatch(.*)*', redirect: { name: 'staff-home' } },
   ],
+})
+
+// Puerta de acceso: se verifica con el servidor en CADA navegación protegida.
+// Ningún valor local (localStorage, flags, rutas) otorga acceso por sí solo.
+router.beforeEach(async (to) => {
+  if (!to.matched.some((record) => record.meta.requiresPortalAccess)) return true
+  try {
+    if (await hasPortalAccess()) return true
+  } catch {
+    // sin red o sin servidor: bloqueado
+  }
+  if (to.name === 'access-blocked') return true
+  return { name: 'access-blocked', query: { from: to.fullPath } }
 })
 
 // Títulos de documento combinados de ambas capas

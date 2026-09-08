@@ -3,7 +3,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { staffnetConfig } from '../../config/staffnetConfig'
 import { staffAnnouncements } from '../../mocks/staffnetData'
-import { displayNameOf, employeeAccount, fetchCurrentEmployee, logoutEmployee } from '../../services/employeeAuth'
+import { displayNameOf, employeeAccount, logoutEmployee } from '../../services/employeeAuth'
+import { hasPortalAccess } from '../../services/accessGate'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,10 +27,11 @@ function logout() {
   })
 }
 
-// Valida la sesión completa al montar; sin sesión válida, regresa al login.
-void fetchCurrentEmployee().then((account) => {
-  if (!account) {
-    router.push({ name: 'staff-login' })
+// Revalida el acceso con el servidor al montar (respaldo del guard de rutas):
+// vale sesión de personal o pase de cliente vigente; si no, a la vista de bloqueo.
+void hasPortalAccess().then((allowed) => {
+  if (!allowed) {
+    router.push({ name: 'access-blocked' })
   }
 })
 

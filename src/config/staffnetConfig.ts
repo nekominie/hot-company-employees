@@ -32,6 +32,16 @@ export interface StaffNetConfig {
     enterLabel: string
     cancelLabel: string
   }
+  accessGate: {
+    code: string
+    title: string
+    message: string
+    hint: string
+    checkingLabel: string
+    retryLabel: string
+    clientsLabel: string
+    clientsPortalUrl: string
+  }
   login: {
     brandTagline: string
     title: string
@@ -146,12 +156,24 @@ export const staffnetConfig: StaffNetConfig = {
     base: 'FISINOR StaffNet // Portal de Personal',
     pages: {
       'staff-login': 'Acceso',
+      'access-blocked': 'Acceso Bloqueado',
       'staff-home': 'Inicio',
       'staff-chat': 'Mensajes',
       'staff-directory': 'Directorio de Personal',
       'staff-documents': 'Documentos y Plantillas',
       'staff-services': 'Mesa de Ayuda IT',
     },
+  },
+  accessGate: {
+    code: 'ACCESO RESTRINGIDO',
+    title: 'Portal de Empleados bloqueado',
+    message:
+      'Esta zona requiere sesión de personal o un pase de acceso vigente. Si llegaste desde el Portal de Clientes, usa el botón de desbloqueo de tu capítulo en vivo.',
+    hint: 'El acceso se verifica con el servidor en cada navegación: modificar el navegador no lo desbloquea.',
+    checkingLabel: 'Verificando acceso con el servidor...',
+    retryLabel: 'Reintentar verificación',
+    clientsLabel: 'Volver al Portal de Clientes',
+    clientsPortalUrl: 'http://localhost:5181/',
   },
   header: {
     searchPlaceholder: 'Buscar en el directorio, documentos o procedimientos...',
