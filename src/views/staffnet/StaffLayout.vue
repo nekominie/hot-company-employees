@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { staffnetConfig } from '../../config/staffnetConfig'
 import { staffAnnouncements } from '../../mocks/staffnetData'
 import { displayNameOf, employeeAccount, logoutEmployee } from '../../services/employeeAuth'
-import { hasPortalAccess } from '../../services/accessGate'
+import { resolveEntry } from '../../services/accessGate'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,11 +12,11 @@ const config = staffnetConfig
 
 const sessionEmployee = computed(() => employeeAccount.value)
 const employeeInitials = computed(() =>
-  displayNameOf(employeeAccount.value)
+  displayNameOf(sessionEmployee.value)
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part[0])
+    .map((part: string) => part[0])
     .join('')
     .toUpperCase(),
 )
@@ -28,11 +28,19 @@ function logout() {
 }
 
 // Revalida el acceso con el servidor al montar (respaldo del guard de rutas):
-// vale sesión de personal o pase de cliente vigente; si no, a la vista de bloqueo.
-void hasPortalAccess().then((allowed) => {
-  if (!allowed) {
+// dentro de las vistas solo vale la sesión de personal; con solo pase se vuelve al login.
+// Nada se renderiza hasta verificar.
+const accessVerified = ref(false)
+void resolveEntry().then((entry) => {
+  if (entry === 'blocked') {
     router.push({ name: 'access-blocked' })
+    return
   }
+  if (entry === 'login') {
+    router.push({ name: 'staff-login' })
+    return
+  }
+  accessVerified.value = true
 })
 
 // Banner rotativo de comunicados
@@ -86,7 +94,10 @@ const navIconPaths: Record<string, string> = {
 </script>
 
 <template>
-  <div class="sn-theme">
+  <div v-if="!accessVerified" class="sn-checking" role="status" aria-label="Verificando acceso">
+    <span class="sn-checking__spinner" aria-hidden="true"></span>
+  </div>
+  <div v-else class="sn-theme">
     <header class="sn-header">
       <div class="sn-header__row">
         <RouterLink class="sn-brand" :to="{ name: 'staff-home' }">
@@ -109,7 +120,7 @@ const navIconPaths: Record<string, string> = {
           <span>
             <span class="sn-user__name">{{ sessionEmployee ? displayNameOf(sessionEmployee) : '' }}</span>
             <span class="sn-user__meta">{{ sessionEmployee?.position }}</span>
-            <span class="sn-user__id">ID: {{ sessionEmployee?.employeeNumber }}</span>
+            <span v-if="sessionEmployee" class="sn-user__id">ID: {{ sessionEmployee.employeeNumber }}</span>
           </span>
           <button
             type="button"
@@ -218,3 +229,25 @@ const navIconPaths: Record<string, string> = {
     </div>
   </div>
 </template>
+
+<style scoped>
+.sn-checking {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  background: #f7fafd;
+}
+.sn-checking__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgba(2, 132, 199, 0.2);
+  border-top-color: #0284c7;
+  animation: sn-checking-spin 0.9s linear infinite;
+}
+@keyframes sn-checking-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

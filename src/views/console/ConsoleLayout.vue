@@ -3,6 +3,21 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeePortalConfig } from '../../config/employeePortalConfig'
 import { operator } from '../../mocks/employeePortalData'
+import { resolveEntry } from '../../services/accessGate'
+
+// Sin verificación no se renderiza nada: respaldo del guard de rutas.
+const accessVerified = ref(false)
+void resolveEntry().then((entry) => {
+  if (entry === 'blocked') {
+    router.push({ name: 'access-blocked' })
+    return
+  }
+  if (entry === 'login') {
+    router.push({ name: 'console-login' })
+    return
+  }
+  accessVerified.value = true
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -33,7 +48,10 @@ function logout() {
 </script>
 
 <template>
-  <div class="fn-theme fn-shell">
+  <div v-if="!accessVerified" class="fn-theme fn-checking" role="status" aria-label="Verificando acceso">
+    <span class="fn-checking__cursor" aria-hidden="true">▊</span>
+  </div>
+  <div v-else class="fn-theme fn-shell">
     <header class="fn-sysbar">
       <span class="fn-sysbar__group">
         <span class="fn-dot fn-blink" aria-hidden="true"></span>
@@ -100,3 +118,22 @@ function logout() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.fn-checking {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  background: #0a0b0d;
+  color: #00ff66;
+  font-size: 28px;
+}
+.fn-checking__cursor {
+  animation: fn-checking-blink 1s steps(1) infinite;
+}
+@keyframes fn-checking-blink {
+  50% {
+    opacity: 0;
+  }
+}
+</style>

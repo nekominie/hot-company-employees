@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { staffnetConfig } from '../config/staffnetConfig'
-import { hasPortalAccess } from '../services/accessGate'
+import { resolveEntry } from '../services/accessGate'
 
 const config = staffnetConfig.accessGate
 const route = useRoute()
@@ -13,13 +13,21 @@ const checking = ref(true)
 async function verify() {
   checking.value = true
   try {
-    if (await hasPortalAccess()) {
+    const entry = await resolveEntry()
+    if (entry === 'inner') {
       const target = typeof route.query.from === 'string' && route.query.from.startsWith('/') ? route.query.from : null
       if (target) {
         await router.replace(target)
       } else {
         await router.replace({ name: 'staff-home' })
       }
+      return
+    }
+    if (entry === 'login') {
+      const from = typeof route.query.from === 'string' ? route.query.from : ''
+      await router.replace({
+        name: from.startsWith('/empleados/console') ? 'console-login' : 'staff-login',
+      })
       return
     }
   } catch {
